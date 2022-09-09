@@ -1,0 +1,126 @@
+//------------------------------------------------
+//--- 010 Editor v12.0.1 Binary Template
+//
+//      File: RE4 bio4str.hed parser
+//   Authors: emoose
+//   Version: 1.0
+// File Mask: *.hed
+//------------------------------------------------
+
+// Uncomment to use with GC/Wii/X360/PS3 data
+//BigEndian();
+
+struct HED_HED
+{
+  uint32 bgm_tbl_offset;
+  uint32 evt_tbl_offset;
+};
+
+struct HED_TABLE_HED
+{
+  uint32 rit_count;
+  uint32 hed_size;
+  uint32 rit_offset;
+  uint32 unk_C;
+};
+
+struct SND_SHD
+{
+  uint32 flag;
+  uint32 samples;
+  uint32 nibbles;
+  uint32 rate;
+  uint32 start_nbl;
+  uint32 lptop_nbl;
+  uint32 lpend_nbl;
+  uint32 offset;
+  uint16 coef[2*16]; // is actually [2][16], 010 gives error some reason though
+  uint16 gain[2];
+  uint16 ps[2];
+  uint16 yn1[2];
+  uint16 yn2[2];
+  uint16 lps[2];
+  uint16 lyn1[2];
+  uint16 lyn2[2];
+  byte pad[4];
+};
+
+struct SND_RIT
+{
+  short str_no;
+  char ch;
+  char poly;
+  char vol;
+  char pan;
+  char vol_flag;
+  char pan_flag;
+  char aux_a;
+  char aux_b;
+  char pl_id;
+  char mode;
+  uint16 flag;
+  char span;
+  char svol;
+};
+
+// Begin parsing
+
+HED_HED Hed;
+
+//
+// BGM table read
+//
+
+FSeek(Hed.bgm_tbl_offset);
+HED_TABLE_HED BgmTableHeader;
+
+// Table header is followed by list of offsets to each SND_SHD
+// But the header only contains a count of the SND_RIT structs, which come after the SND_SHDs
+// There could be (and usually is) more RITs than SND_SHDS, since multiple RITs can share a single SHD - but we don't have a count of the SND_SHDs themselves
+// Seems game must be reading offsets one by one until it hits a 0 offset
+// (or maybe first reads the SND_RIT structs & uses str_no value as a index into the offset list to read each SND_SHD, instead of reading them all beforehand)
+local int i = 0;
+for(i = 0; i < BgmTableHeader.rit_count; i++)
+{
+  uint32 BgmTableOffsets <hidden=true>;
+  if (BgmTableOffsets == 0)
+    break;
+}
+
+// Read in SHDs
+for(i = 0; i < BgmTableHeader.rit_count; i++)
+{
+  if (BgmTableOffsets[i] == 0)
+    break;
+  FSeek(Hed.bgm_tbl_offset + BgmTableHeader.hed_size + BgmTableOffsets[i]);
+  SND_SHD BgmShdEntry;
+}
+
+FSeek(Hed.bgm_tbl_offset + BgmTableHeader.rit_offset);
+SND_RIT BgmRitEntries[BgmTableHeader.rit_count];
+
+//
+// EVT table read
+//
+
+FSeek(Hed.evt_tbl_offset);
+HED_TABLE_HED EvtTableHeader;
+
+for(i = 0; i < EvtTableHeader.rit_count; i++)
+{
+  uint32 EvtTableOffsets <hidden=true>;
+  if (EvtTableOffsets == 0)
+    break;
+}
+
+// Read in SHDs
+for(i = 0; i < EvtTableHeader.rit_count; i++)
+{
+  if (EvtTableOffsets[i] == 0)
+    break;
+  FSeek(Hed.evt_tbl_offset + EvtTableHeader.hed_size + EvtTableOffsets[i]);
+  SND_SHD EvtShdEntry;
+}
+
+FSeek(Hed.evt_tbl_offset + EvtTableHeader.rit_offset);
+SND_RIT EvtRitEntries[EvtTableHeader.rit_count];
