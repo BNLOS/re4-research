@@ -1,0 +1,3 @@
+Microsoft (R) Direct3D Shader Compiler 10.1
+Copyright (C) 2013 Microsoft. All rights reserved.
+
