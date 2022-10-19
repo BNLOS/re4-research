@@ -3,7 +3,7 @@
 //
 //      File: RE4 EVD parser
 //   Authors: emoose
-//   Version: 1.0
+//   Version: 1.1
 //   Purpose: Parse EVD files into packet/file entry lists
 //  Category: 
 // File Mask: *.evd
@@ -13,112 +13,466 @@
 
 // Structure defs...
 
-struct EvdHeader
+DisplayFormatHex();
+
+struct Vec3
 {
-  char filePath_0[32];
-  char areaId_20[8];
-  char eventId_28[8];
-  uint32 unk_30;
-  byte unk_34[12];
-  uint32 packetStartOffset_40;
-  uint32 packetTotalSize_44;
-  uint32 fileTableCount_48;
-  uint32 fileTableOffset_4C;
+  float x;
+  float y;
+  float z;
 };
 
-enum<uint32> EvdPacketType
+struct EvdInfo
 {
-  EvdPacketType_BeginEvt = 0,
-  EvdPacketType_SetPl,
-  EvdPacketType_SetEm,
-  EvdPacketType_SetOm,
-  EvdPacketType_SetParts,
-  EvdPacketType_SetList,
-  EvdPacketType_Cam,
-  EvdPacketType_CamPos,
-  EvdPacketType_CamDammy,
-  EvdPacketType_Pos,
-  EvdPacketType_PosPl,
-  EvdPacketType_Mot,
-  EvdPacketType_Shp,
-  EvdPacketType_Esp,
-  EvdPacketType_Lit,
-  EvdPacketType_Str,
-  EvdPacketType_Se,
-  EvdPacketType_Mes,
-  EvdPacketType_Func,
-  EvdPacketType_ParentOn,
-  EvdPacketType_ParentOff,
-  EvdPacketType_EndPl,
-  EvdPacketType_EndEm,
-  EvdPacketType_EndOm,
-  EvdPacketType_EndParts,
-  EvdPacketType_EndList,
-  EvdPacketType_EndEvt,
-  EvdPacketType_EndPac,
-  EvdPacketType_SetEff,
-  EvdPacketType_Fade,
-  EvdPacketType_Fog,
-  EvdPacketType_Focus,
-  EvdPacketType_SetMdt
+  char NameFile_0[32]; /* bitsize 256, bitpos 0 */
+  char RoomNo_20[8]; /* bitsize 64, bitpos 256 */
+  char EventNo_28[8]; /* bitsize 64, bitpos 320 */
+  int SerialNo_30; /* bitsize 32, bitpos 384 */
+  int EvtFlag_34; /* bitsize 32, bitpos 416 */
+  int _pad32_38[2]; /* bitsize 64, bitpos 448 */
+};
+
+struct EvdHead
+{
+  EvdInfo Info_0; /* bitsize 512, bitpos 0 */
+  int OffsetPac_40; /* bitsize 32, bitpos 512 */
+  int SizePac_44; /* bitsize 32, bitpos 544 */
+  int NumBinTbl_48; /* bitsize 32, bitpos 576 */
+  int OffsetBinTbl_4C; /* bitsize 32, bitpos 608 */
+};
+
+enum<uint32> EvpTp
+{
+  EvpTp_BeginEvt = 0,
+  EvpTp_SetPl,
+  EvpTp_SetEm,
+  EvpTp_SetOm,
+  EvpTp_SetParts,
+  EvpTp_SetList,
+  EvpTp_Cam,
+  EvpTp_CamPos,
+  EvpTp_CamDammy,
+  EvpTp_Pos,
+  EvpTp_PosPl,
+  EvpTp_Mot,
+  EvpTp_Shp,
+  EvpTp_Esp,
+  EvpTp_Lit,
+  EvpTp_Str,
+  EvpTp_Se,
+  EvpTp_Mes,
+  EvpTp_Func,
+  EvpTp_ParentOn,
+  EvpTp_ParentOff,
+  EvpTp_EndPl,
+  EvpTp_EndEm,
+  EvpTp_EndOm,
+  EvpTp_EndParts,
+  EvpTp_EndList,
+  EvpTp_EndEvt,
+  EvpTp_EndPac,
+  EvpTp_SetEff,
+  EvpTp_Fade,
+  EvpTp_Fog,
+  EvpTp_Focus,
+  EvpTp_SetMdt
+};
+
+enum<int> EvtEspKindId
+{
+  EvtEspRoom,
+  EvtEspCore,
+  EvtEspPl,
+  EvtEspEm,
+  EvtEspWep,
+  EvtEspEvt,
+  EvtEspEt00
+};
+
+enum<int> EvtFade
+{
+  EvtFadeIn,
+  EvtFadeOut
+};
+
+struct EvpBeginEvt // good
+{
+};
+
+struct EvpSetPl
+{
+  char NameMod[12];
+  byte _pad8[4];
+};
+
+struct EvpSetEm
+{
+  char NameMod[12];
+  byte _pad8[4];
+};
+
+struct EvpSetOm // good
+{
+  char NameMod[12]; /* bitsize 96, bitpos 128 */
+  char NameBin[48]; /* bitsize 384, bitpos 224 */
+  char NameTpl[48]; /* bitsize 384, bitpos 608 */
+  byte _pad8[4]; /* bitsize 32, bitpos 992 */
+};
+
+struct EvpSetParts // good
+{
+  char NameMod[12]; /* bitsize 96, bitpos 128 */
+  char NameOya[12]; /* bitsize 96, bitpos 224 */
+  char NameBin[48]; /* bitsize 384, bitpos 320 */
+  char NameTpl[48]; /* bitsize 384, bitpos 704 */
+  byte _pad8[8]; /* bitsize 64, bitpos 1088 */
+};
+
+struct EvpSetEff // good
+{
+  char NameBin[0x30];
+};
+
+struct EvpSetMdt // good
+{
+  char NameBin[0x30];
+};
+
+struct EvpSetList
+{
+  char NameMod[12]; /* bitsize 96, bitpos 128 */
+  uint32 NoList; /* bitsize 32, bitpos 224 */
+  byte _pad8[]; /* bitpos 256 */
+};
+
+struct EvpCam // good
+{
+  char NameBin[0x30];
+};
+
+struct EvpCamPos
+{
+  Vec3 Pos;
+  Vec3 Ang;
+  byte _pad8[8];
+};
+
+struct EvpCamDammy
+{
+  int Timer;
+  byte _pad8[12];
+};
+
+struct EvpPos // need to check Vec3
+{
+  char NameMod[12]; /* bitsize 96, bitpos 128 */
+  char NameOya[12]; /* bitsize 96, bitpos 224 */
+  Vec3 Pos; /* bitsize 96, bitpos 320 */
+  Vec3 Ang; /* bitsize 96, bitpos 416 */
+  int PartsNo; /* bitsize 32, bitpos 512 */
+  unsigned char _pad8[12]; /* bitsize 96, bitpos 544 */
+};
+
+struct EvpPosPl
+{
+  char NameMod[12];
+  byte _pad8[4];
+};
+
+struct EvpMot // good
+{
+  char NameMod[12]; /* bitsize 96, bitpos 128 */
+  char NameBin[48]; /* bitsize 384, bitpos 224 */
+  byte _pad8[4]; /* bitsize 32, bitpos 608 */
+};
+
+struct EvpShp // good
+{
+  char NameMod[12]; /* bitsize 96, bitpos 128 */
+  char NameBin[48]; /* bitsize 384, bitpos 224 */
+  byte _pad8[4]; /* bitsize 32, bitpos 608 */
+};
+
+struct EvpEsp
+{
+  char NameMod[12];
+  EvtEspKindId IdKind;
+  int IdEst;
+  byte _pad8[12];
+};
+
+struct EvpLit // good
+{
+  char NameBin[0x30];
+};
+
+struct EvpFog
+{
+  char NameBin[0x30];
+};
+
+struct EvpFocus // good
+{
+  char NameBin[0x30];
+};
+
+struct EvpStr // good
+{
+  int NoTar; /* bitsize 32, bitpos 128 */
+  int NoStr; /* bitsize 32, bitpos 160 */
+  byte _pad8[8]; /* bitsize 64, bitpos 192 */
+};
+
+struct EvpSe
+{
+  int NoTar; /* bitsize 32, bitpos 128 */
+  int NoSe; /* bitsize 32, bitpos 160 */
+  byte _pad8[8]; /* bitsize 64, bitpos 192 */
+};
+
+struct EvpFade
+{
+  EvtFade Flag;
+  int FadeNo;
+  int Timer;
+  byte _pad8[4];
+};
+
+struct EvpMes // good
+{
+  int NoMes<format=decimal>;
+  int Timer<format=decimal>;
+  byte _pad8[8];
+};
+
+struct EvpFunc
+{
+  int NoFunc;
+  int Param;
+  byte _pad8[8];
+};
+
+struct EvpParentOn
+{
+  char NameMod[12];
+  char NameOya[12];
+  byte _pad8[8];
+};
+
+struct EvpParentOff
+{
+  char NameMod[12];
+  byte _pad8[4];
+};
+
+struct EvpEndPl
+{
+  char NameMod[12];
+  char _pad8[4];
+};
+
+struct EvpEndEm
+{
+  char NameMod[12];
+  char _pad8[4];
+};
+
+struct EvpEndOm
+{
+  char NameMod[12];
+  char _pad8[4];
+};
+
+struct EvpEndParts
+{
+  char NameMod[12];
+  char _pad8[4];
+};
+
+struct EvpEndList
+{
+  char NameMod[12];
+  char _pad8[4];
+};
+
+struct EvpEndEvt // good
+{
+};
+
+struct EvpEndPac // good
+{
 };
 
 typedef struct
 {
-  EvdPacketType packetType_0;
-  uint32 unk_4;
-  uint32 unk_8;
-  uint16 packetSize_C;
-  uint16 unk_E; // seems to be idx to this packet, but sometimes skips ahead, strange
+  EvpTp Type_0;
+  uint32 FlagCommon_4;
+  int16 NoCut_8;
+  int16 Frame_A;
+  int16 Size_C;
+  uint16 NoPac_E; // seems to be idx to this packet, but sometimes skips ahead, strange
 
-  // data for the packet follows, structure depends on packet type...
-  if(packetSize_C > 0x10)
-    byte packetData_10[packetSize_C - 0x10];
+  if(Size_C > 0x10)
+  {
+    switch (Type_0)
+    {
+      case EvpTp_BeginEvt:
+        EvpBeginEvt packetData_10;
+        break;
+      case EvpTp_SetPl:
+        EvpSetPl packetData_10;
+        break;
+      case EvpTp_SetEm:
+        EvpSetEm packetData_10;
+        break;
+      case EvpTp_SetOm:
+        EvpSetOm packetData_10;
+        break;
+      case EvpTp_SetParts:
+        EvpSetParts packetData_10;
+        break;
+      case EvpTp_SetList:
+        EvpSetList packetData_10;
+        break;
+      case EvpTp_Cam:
+        EvpCam packetData_10;
+        break;
+      case EvpTp_CamPos:
+        EvpCamPos packetData_10;
+        break;
+      case EvpTp_CamDammy:
+        EvpCamDammy packetData_10;
+        break;
+      case EvpTp_Pos:
+        EvpPos packetData_10;
+        break;
+      case EvpTp_PosPl:
+        EvpPosPl packetData_10;
+        break;
+      case EvpTp_Mot:
+        EvpMot packetData_10;
+        break;
+      case EvpTp_Shp:
+        EvpShp packetData_10;
+        break;
+      case EvpTp_Esp:
+        EvpEsp packetData_10;
+        break;
+      case EvpTp_Lit:
+        EvpLit packetData_10;
+        break;
+      case EvpTp_Str:
+        EvpStr packetData_10;
+        break;
+      case EvpTp_Se:
+        EvpSe packetData_10;
+        break;
+      case EvpTp_Mes:
+        EvpMes packetData_10;
+        break;
+      case EvpTp_Func:
+        EvpFunc packetData_10;
+        break;
+      case EvpTp_ParentOn:
+        EvpParentOn packetData_10;
+        break;
+      case EvpTp_ParentOff:
+        EvpParentOff packetData_10;
+        break;
+      case EvpTp_EndPl:
+        EvpEndPl packetData_10;
+        break;
+      case EvpTp_EndEm:
+        EvpEndEm packetData_10;
+        break;
+      case EvpTp_EndOm:
+        EvpEndOm packetData_10;
+        break;
+      case EvpTp_EndParts:
+        EvpEndParts packetData_10;
+        break;
+      case EvpTp_EndList:
+        EvpEndList packetData_10;
+        break;
+      case EvpTp_EndEvt:
+        EvpEndEvt packetData_10;
+        break;
+      case EvpTp_EndPac:
+        EvpEndPac packetData_10;
+        break;
+      case EvpTp_SetEff:
+        EvpSetEff packetData_10;
+        break;
+      case EvpTp_Fade:
+        EvpFade packetData_10;
+        break;
+      case EvpTp_Fog:
+        EvpFog packetData_10;
+        break;
+      case EvpTp_Focus:
+        EvpFocus packetData_10;
+        break;
+      case EvpTp_SetMdt:
+        EvpSetMdt packetData_10;
+        break;
+      default:
+        byte packetData_10[Size_C - 0x10];
+        break;
+    }
+  }
+  // data for the packet follows, depending on type...
+} EvpHead<read=ReadEvpHead>;
 
-} EvdPacketHead<read=ReadEvdPacketHead>;
 
-string ReadEvdPacketHead(EvdPacketHead& a)
+string ReadEvpHead(EvpHead& a)
 {
-  return EnumToString(a.packetType_0);
+  if(a.Type_0 == EvpTp_Mes)
+  {
+    string s;
+    SPrintf(s, "EvpTp_Mes: msg %d", a.packetData_10.NoMes);
+    return s;
+  } 
+  return EnumToString(a.Type_0);
 }
 
 typedef struct
 {
-  char name_0[0x30];
-  uint32 offset_30;
-  uint32 size_34;
-  uint32 unk_38;
-  uint32 unk_3C;
+  char NameFile_0[0x30];
+  uint32 Offset_30;
+  uint32 Size_34;
+  int _pad32_38[2];
 
   // Try reading in the data for this entry - makes it easy to save it out with File -> Save Selection
-  if(size_34 > 0)
-  {
-    local long pos = FTell();
-    FSeek(offset_30);
-    byte fileData[size_34] <optimize=false>;
-    FSeek(pos);
-  }
-} EvdFileEntry<read=ReadEvdFileEntry>;
+  //if(size_34 > 0)
+  //{
+  //  local long pos = FTell();
+  //  FSeek(offset_30);
+  //  byte fileData[size_34] <optimize=false>;
+  //  FSeek(pos);
+  //}
+} EvdBin<read=ReadEvdBin>;
 
-string ReadEvdFileEntry(EvdFileEntry& a)
+string ReadEvdBin(EvdBin& a)
 {
-  return a.name_0;
+  string s;
+  SPrintf(s, "%s @ 0x%x", a.NameFile_0, a.Offset_30);
+  return s;
 }
 
-// EVD reading start!
+// EVD reading start:
 
-EvdHeader Header;
+EvdHead Header;
 
-FSeek(Header.packetStartOffset_40);
+FSeek(Header.OffsetPac_40);
 
 local long pos = FTell();
-while(FTell() < Header.packetStartOffset_40 + Header.packetTotalSize_44)
+while(FTell() < Header.OffsetPac_40 + Header.SizePac_44)
 {
   pos = FTell();
-  EvdPacketHead Packet;
+  EvpHead Packet;
 }
 
 // File table follows - files can be extracted by using the offset_30/size_34 fields shown for them
 
-FSeek(Header.fileTableOffset_4C);
-EvdFileEntry FileEntries[Header.fileTableCount_48] <optimize=false>;
+FSeek(Header.OffsetBinTbl_4C);
+EvdBin FileEntries[Header.NumBinTbl_48] <optimize=false>;
